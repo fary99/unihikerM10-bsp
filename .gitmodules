@@ -1,0 +1,9 @@
+[submodule "u-boot"]
+	path = u-boot
+	url = https://github.com/fary99/u-boot.git
+[submodule "kernel"]
+	path = kernel
+	url = https://github.com/fary99/kernel.git
+[submodule "rkbin"]
+	path = rkbin
+	url = https://github.com/fary99/rkbin.git
