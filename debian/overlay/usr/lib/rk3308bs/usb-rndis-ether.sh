@@ -130,6 +130,6 @@ if ! ip link show br0 >/dev/null 2>&1; then
 	ip link set usb1 master br0
 fi
 
-[ -f /etc/init.d/isc-dhcp-server ] && /etc/init.d/isc-dhcp-server restart 2>/dev/null || true
-systemctl restart isc-dhcp-server 2>/dev/null || true
+# Restart DHCP server in background to avoid blocking this oneshot service
+( sleep 1; systemctl restart isc-dhcp-server 2>/dev/null || true ) &
 exit 0

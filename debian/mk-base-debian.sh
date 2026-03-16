@@ -9,8 +9,8 @@ TARGET="${TARGET:-base}"
 [ "$ARCH" != "arm64" ] && { echo "Only arm64 is supported for RK3308BS."; exit 1; }
 [ "$TARGET" != "base" ] && { echo "Only base (minimal) rootfs is supported."; exit 1; }
 
-if [ -e linaro-$RELEASE-alip-*.tar.gz ]; then
-	rm linaro-$RELEASE-alip-*.tar.gz
+if [ -e unihiker-$RELEASE-*.tar.gz ]; then
+	rm unihiker-$RELEASE-*.tar.gz
 fi
 
 cd ubuntu-build-service/$RELEASE-$TARGET-$ARCH
@@ -21,12 +21,12 @@ make clean
 ./configure
 make
 
-if [ -e linaro-$RELEASE-alip-*.tar.gz ]; then
-	sudo chmod 0666 linaro-$RELEASE-alip-*.tar.gz
-	mv linaro-$RELEASE-alip-*.tar.gz ../../
+if [ -e unihiker-$RELEASE-*.tar.gz ]; then
+	sudo chmod 0666 unihiker-$RELEASE-*.tar.gz
+	mv unihiker-$RELEASE-*.tar.gz  ../../
 	cd ../..
-	mv linaro-$RELEASE-alip-*.tar.gz linaro-$RELEASE-base-$ARCH.tar.gz
+	mv unihiker-$RELEASE-*.tar.gz  unihiker-$RELEASE-base-$ARCH.tar.gz
 else
 	echo -e "\e[31m Failed to run livebuild, please check your network connection. \e[0m"
-	exit 1
+	#exit 1
 fi

@@ -563,7 +563,7 @@ main()
 	mkdir -p "$RK_FIRMWARE_DIR"
 
 	cd "$RK_SDK_DIR"
-	# ╡╩тытз SDK ╦Ыд©б╪вт╤╞иЗЁи README.md а╢╫с
+	# Д╦█Е├█Е°╗ SDK Ф═╧Г⌡╝Е╫∙Х┤╙Е┼╗Г■÷Ф┬░ README.md И⌠╬Ф▌╔
 	[ -d common ] || ln -rsf "$RK_COMMON_DIR" .
 
 	# TODO: Remove it in the repo manifest.xml

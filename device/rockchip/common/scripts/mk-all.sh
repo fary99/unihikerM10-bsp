@@ -27,7 +27,7 @@ build_all()
 	[ -z "$RK_AMP" ] || "$RK_SCRIPTS_DIR/mk-amp.sh"
 
 	"$RK_SCRIPTS_DIR/mk-firmware.sh"
-
+	"$RK_SCRIPTS_DIR/build.sh" updateimg
 	finish_build
 }
 

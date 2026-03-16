@@ -208,7 +208,8 @@ build_debian()
 	check_config RK_DEBIAN || false
 
 	IMAGE_DIR="${1:-$RK_OUTDIR/debian}"
-	ARCH=${RK_DEBIAN_ARCH:-armhf}
+	# RK3308BS: debian 仅支持 arm64
+	ARCH=${RK_DEBIAN_ARCH:-arm64}
 
 	"$RK_SCRIPTS_DIR/check-debian.sh"
 
@@ -217,21 +218,10 @@ build_debian()
 	message "=========================================="
 
 	cd debian
-	if [ "$RK_DEBIAN_MINIMAL" = y ]; then
-		DEBIAN_TARGET=base
-		BASE_TARBALL="linaro-$RK_DEBIAN_VERSION-base-$ARCH.tar.gz"
-	else
-		DEBIAN_TARGET=desktop
-		BASE_TARBALL="linaro-$RK_DEBIAN_VERSION-alip-*.tar.gz"
-	fi
-	if ! ls $BASE_TARBALL 1>/dev/null 2>&1; then
-		RELEASE=$RK_DEBIAN_VERSION TARGET=$DEBIAN_TARGET ARCH=$ARCH \
+	BASE_TARBALL="unihiker-$RK_DEBIAN_VERSION-base-$ARCH.tar.gz"
+	if [ ! -e "$BASE_TARBALL" ]; then
+		RELEASE=$RK_DEBIAN_VERSION TARGET=base ARCH=$ARCH \
 			./mk-base-debian.sh
-	fi
-	if [ "$RK_DEBIAN_MINIMAL" = y ]; then
-		ln -sf linaro-$RK_DEBIAN_VERSION-base-$ARCH.tar.gz linaro-$RK_DEBIAN_VERSION-$ARCH.tar.gz
-	else
-		ln -sf linaro-$RK_DEBIAN_VERSION-alip-*.tar.gz linaro-$RK_DEBIAN_VERSION-$ARCH.tar.gz
 	fi
 
 	DEBIAN_SCRIPT=mk-rootfs-$RK_DEBIAN_VERSION.sh
@@ -241,14 +231,14 @@ build_debian()
 		sed -i "s#\(http://\)[^/]*#\1$RK_DEBIAN_MIRROR#" "$DEBIAN_SCRIPT"
 	fi
 
-	VERSION=debug ARCH=$ARCH RK_DEBIAN_MINIMAL=$RK_DEBIAN_MINIMAL ./$DEBIAN_SCRIPT
+	VERSION=debug ARCH=$ARCH RK_DEBIAN_MINIMAL=y ./$DEBIAN_SCRIPT
 	./mk-image.sh
 
 	if ! [ -r "$RK_LOG_DIR/post-rootfs.log" ]; then
 		warning "Building without post-rootfs stage!"
 	fi
 
-	ln -rsf "$PWD/linaro-rootfs.img" "$IMAGE_DIR/rootfs.ext4"
+	ln -rsf "$PWD/unihiker-rootfs.img" "$IMAGE_DIR/rootfs.ext4"
 
 	finish_build build_debian $@
 }

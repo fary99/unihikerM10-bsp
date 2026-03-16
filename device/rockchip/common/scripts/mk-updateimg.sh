@@ -136,9 +136,7 @@ do_build_updateimg()
 
 build_updateimg()
 {
-	# Debian/GPT flow: disable Android-style update.img packing.
-	notice "updateimg is disabled for this Debian GPT SDK, skip packing update image."
-	finish_build
+	do_build_updateimg "$@"
 }
 
 build_ota_updateimg()
@@ -152,9 +150,11 @@ build_ota_updateimg()
 
 usage_hook()
 {
+	usage_oneline "updateimg" "pack Rockchip update.img"
+	usage_oneline "ota-updateimg" "pack Rockchip OTA update.img"
 	usage_oneline "edit-package-file" "edit package-file"
 	usage_oneline "edit-ota-package-file" "edit package-file for OTA"
-		}
+}
 
 clean_hook()
 {
@@ -217,6 +217,24 @@ post_build_hook()
 {
 	# Debian GPT 流程下不再自动打 updateimg/ota-updateimg，这里直接跳过。
 	return 0
+}
+
+BUILD_CMDS="updateimg ota-updateimg"
+build_hook()
+{
+	case "$1" in
+		updateimg)
+			build_updateimg "${@:2}"
+			;;
+		ota-updateimg)
+			build_ota_updateimg "${@:2}"
+			;;
+		*)
+			return 0
+			;;
+	esac
+
+	finish_build "$@"
 }
 
 source "${RK_BUILD_HELPER:-$(dirname "$(realpath "$0")")/build-helper}"

@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 TARGET_ROOTFS_DIR=./binary
-ROOTFSIMAGE=linaro-rootfs.img
+ROOTFSIMAGE=unihiker-rootfs.img
 
 
 echo Making rootfs!

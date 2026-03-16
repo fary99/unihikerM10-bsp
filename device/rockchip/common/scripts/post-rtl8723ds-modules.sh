@@ -27,3 +27,16 @@ message "Installing RTL8723DS overlay modules into /lib/modules/$KERNELRELEASE/e
 mkdir -p "$TARGET_DIR/lib/modules/$KERNELRELEASE/extra"
 cp -n "$TARGET_DIR/usr/lib/rk3308bs/modules"/*.ko "$TARGET_DIR/lib/modules/$KERNELRELEASE/extra/" 2>/dev/null || true
 depmod -b "$TARGET_DIR" "$KERNELRELEASE" 2>/dev/null || true
+
+# RTL8723DS Bluetooth: ensure firmware in /lib/firmware/rtl_bt for rtk_hciattach (same layout as post-wifibt prebuilt path)
+if [ -d "$TARGET_DIR/usr/lib/firmware/rtlbt" ]; then
+	message "Installing RTL8723DS BT firmware into /lib/firmware/rtl_bt/"
+	mkdir -p "$TARGET_DIR/lib/firmware/rtl_bt"
+	cp -n "$TARGET_DIR/usr/lib/firmware/rtlbt"/* "$TARGET_DIR/lib/firmware/rtl_bt/" 2>/dev/null || true
+fi
+if [ -d "$TARGET_DIR/usr/lib/rk3308bs/wifi-firmware" ]; then
+	message "Installing RTL8723DS firmware from wifi-firmware into /lib/firmware/rtl_bt/"
+	mkdir -p "$TARGET_DIR/lib/firmware/rtl_bt"
+	cp -n "$TARGET_DIR/usr/lib/rk3308bs/wifi-firmware"/* "$TARGET_DIR/lib/firmware/rtl_bt/" 2>/dev/null || true
+fi
+

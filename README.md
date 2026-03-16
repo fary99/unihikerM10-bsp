@@ -1,10 +1,12 @@
 # RK3308BS UNIHIKER M10 Linux SDK
 
+[中文版](README_CN.md)
+
 A trimmed, customized **RK3308BS + Debian 12 (bookworm)** SDK based on the Rockchip Linux SDK, targeting the DFRobot UNIHIKER M10 board:
 
 - Boot chain: `MiniLoaderAll.bin` → U-Boot → Linux 6.1 → Debian rootfs
 - Partition layout: **GPT only** (boot + rootfs), no oem/userdata partitions
-- Rootfs: Linaro Debian bookworm with a lightweight X11 desktop
+- Rootfs: Debian bookworm minimal (console only, no GUI)
 
 ---
 ## Install
@@ -35,7 +37,7 @@ git submodule update --init --recursive
   - `parameter-64bit-debian.txt` — **GPT partition table** (uboot/trust/misc/boot/rootfs)
 - `device/rockchip/common/` — Shared build scripts and hooks
   - `build-hooks/` — Top-level build entry (`99-all.sh` runs loader → kernel → rootfs → firmware)
-  - `post-hooks/` — Post–rootfs steps
+  - `post-hooks/` — Post-rootfs steps
   - `scripts/` — `mk-kernel.sh`, `mk-rootfs.sh`, `mk-firmware.sh`, etc.
 
 ---
@@ -121,7 +123,7 @@ prebuilts/
 After a full or partial build:
 
 - Kernel: `kernel/boot.img`, `kernel/arch/arm64/boot/dts/rockchip/rk3308bs-unihikerM10.dtb`
-- Rootfs: `debian/linaro-rootfs.img`
+- Rootfs: `debian/unihiker-rootfs.img`
 
 Full build runs in order:
 
@@ -129,6 +131,7 @@ Full build runs in order:
 2. Kernel (`mk-kernel.sh` → `boot.img`)
 3. Debian rootfs (`mk-rootfs.sh` → `mk-rootfs-bookworm.sh`)
 4. Firmware packaging (`mk-firmware.sh`)
+5. Update image packaging (`mk-updateimg.sh` → `update.img`)
 
 Output images:
 
@@ -143,8 +146,9 @@ Typical contents:
 - `trust.img` — Trust firmware
 - `boot.img` — Kernel (+ initramfs if used)
 - `rootfs.img` — Debian rootfs
-- `misc.img` — misc partition
+- `misc.img` — Misc partition
 - `parameter.txt` — Partition table (GPT, from `parameter-64bit-debian.txt`)
+- `update.img` — Rockchip full flash image (contains all partitions above)
 
 ---
 
@@ -159,10 +163,10 @@ Typical contents:
 - **Hostname / network**
   - Hostname: `unihiker`
   - `/etc/hosts`: `127.0.1.1    unihiker`
-  - USTC Debian mirror and DNS
+  - APT source: Official Debian (`deb.debian.org`)
+  - DNS: `8.8.8.8`
 - **Preinstalled**
   - SSH: `openssh-server`, `openssh-client`
-  - GUI: `xserver-xorg`, `openbox`, `xterm`, fbdev
   - WiFi/BT: `wpasupplicant`, `iw`, `network-manager`, `bluez`
   - Network tools: `net-tools` (e.g. ifconfig)
   - Touch debugging: `evtest`
@@ -181,18 +185,90 @@ Partition definition: `device/rockchip/.chips/rk3308/parameter-64bit-debian.txt`
 - GPT only, no oem/userdata
 - rootfs can grow to fill remaining space
 
-Flash with **rkdeveloptool** (https://github.com/rockchip-linux/rkdeveloptool):
+Flashing tool: **upgrade_tool** (Rockchip command-line development tool), bundled with the SDK:
 
-1. Flash loader: `MiniLoaderAll.bin`
-2. Write GPT and partition table from `parameter-64bit-debian.txt`
-3. Flash `uboot.img`, `trust.img`, `boot.img`, `rootfs.img`
+```
+tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool/upgrade_tool
+```
+
+> See the user manual in the same directory for detailed usage.
+
+**Install upgrade_tool to system PATH (recommended, one-time setup):**
+
+```bash
+sudo cp tools/linux/Linux_Upgrade_Tool/Linux_Upgrade_Tool/upgrade_tool /usr/local/bin/
+sudo chmod +x /usr/local/bin/upgrade_tool
+```
+
+After installation, you can use `sudo upgrade_tool` from any directory.
+
+### Method 1: Full image flashing (update.img, recommended)
+
+`update.img` contains the loader, parameter, and all partition images. A single command flashes the entire system.
+
+**Build update.img separately:**
+
+```bash
+./build.sh updateimg
+```
+
+> `./build.sh all` automatically generates `update.img` at the end; no need to run this separately.
+
+**Flashing steps:**
+
+```bash
+# 1. Enter Maskrom mode (hold Maskrom button while powering on)
+# 2. Check if the device is detected
+sudo upgrade_tool ld
+
+# 3. Flash entire image (auto-downloads Boot + writes all partitions)
+sudo upgrade_tool uf output/firmware/update.img
+```
+
+### Method 2: Flash individual partitions
+
+Suitable for development/debugging when only updating a specific partition.
+
+```bash
+# Enter Maskrom mode, download Boot
+sudo upgrade_tool db output/firmware/MiniLoaderAll.bin
+
+# Flash Loader (writes IDBlock)
+sudo upgrade_tool ul output/firmware/MiniLoaderAll.bin
+
+# Flash partition table
+sudo upgrade_tool di -p output/firmware/parameter.txt
+
+# Flash partition images (-u/-t/-m/-b are built-in shortcuts; rootfs uses partition name)
+sudo upgrade_tool di -u output/firmware/uboot.img
+sudo upgrade_tool di -t output/firmware/trust.img
+sudo upgrade_tool di -m output/firmware/misc.img
+sudo upgrade_tool di -b output/firmware/boot.img
+sudo upgrade_tool di -rootfs output/firmware/rootfs.img
+```
+
+**Common partition shortcuts:**
+
+| Shortcut | Partition |
+|----------|-----------|
+| `-u` | uboot |
+| `-t` | trust |
+| `-m` | misc |
+| `-b` | boot |
+| `-k` | kernel |
+| `-r` | recovery |
+
+> For partitions without a built-in shortcut (e.g. rootfs), use the `-partitionname` format: `-rootfs rootfs.img`.
 
 ---
 
 ## FAQ
 
-- **Q: Why is there no `update.img`?**  
-  A: This SDK uses a Linux GPT flow only. Android-style `update.img` packing is disabled; only the individual images above are produced.
+- **Q: What is the difference between full image flashing and individual partition flashing?**
+  A: `update.img` is the standard Rockchip package format containing all partitions. A single command flashes the entire system, ideal for mass production and first-time flashing. Individual partition flashing is useful during development when only a specific partition needs updating (e.g. just `boot.img` or `rootfs.img`).
+
+- **Q: How to regenerate update.img without recompiling everything?**
+  A: Make sure all partition images are present in `output/firmware/`, then run `./build.sh updateimg`.
 
 ---
 
@@ -202,3 +278,19 @@ This SDK is a customized subset of the Rockchip Linux SDK for the UNIHIKER M10. 
 
 - Open an issue or PR in the project repo, or
 - Contact the hardware vendor (DFRobot) for support.
+
+---
+
+## License
+
+This SDK contains components under different licenses:
+
+- **Linux Kernel** (`kernel/`) — [GPL-2.0-only](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) with Linux-syscall-note exception
+- **U-Boot** (`u-boot/`) — [GPL-2.0+](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+- **Build scripts and board configuration** (`device/`, `debian/`, etc.) — [GPL-2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+
+This project as a whole is distributed under the terms of the **GNU General Public License v2.0**. See [LICENSE](LICENSE) for the full license text.
+
+```
+SPDX-License-Identifier: GPL-2.0
+```

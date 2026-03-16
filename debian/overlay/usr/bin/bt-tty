@@ -8,4 +8,5 @@ if [ -d "$BT_PINCTRL_DIR" ]; then
 		head -n 1 | sed 's/^uart//')
 fi
 
-echo ttyS${RK_BT_UART:-1}
+# RK3308BS / Unihiker: BT UART is typically ttyS4 when not in DT
+echo ttyS${RK_BT_UART:-4}

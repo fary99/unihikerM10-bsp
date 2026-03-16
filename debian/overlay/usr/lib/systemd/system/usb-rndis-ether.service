@@ -8,7 +8,7 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStartPre=/bin/sleep 1
 ExecStart=/usr/lib/rk3308bs/usb-rndis-ether.sh
-TimeoutStartSec=20
+TimeoutStartSec=60
 
 [Install]
 WantedBy=multi-user.target
